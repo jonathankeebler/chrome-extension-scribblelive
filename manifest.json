@@ -1,0 +1,29 @@
+{
+  "name" : "Is ScribbleLive on this page?",
+  "version" : "0.1",
+  "description" : "Shows the ScribbleLive icon in your location bar if the page has ScribbleLive technology on it.",
+  "background" : {
+    "scripts": ["main.js"]
+  },
+  "page_action" :
+  {
+    "default_icon" : "favicon.png",
+    "default_title" : "ScribbleLive"
+  },
+  "content_scripts" : [
+    {
+      "matches" : [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js" : ["contentscript.js"],
+      "run_at" : "document_idle",
+      "all_frames" : false
+    }
+  ],
+  "icons" : {
+    "128" : "scribblelivelogo.png"
+  },
+  "manifest_version": 2,
+  "permissions": [ "notifications"]
+}
