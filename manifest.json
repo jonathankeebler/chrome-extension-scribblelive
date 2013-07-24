@@ -1,5 +1,5 @@
 {
-  "name" : "Is ScribbleLive on this page?",
+  "name" : "The ScribbleLive Daily",
   "version" : "0.1",
   "description" : "Shows the ScribbleLive icon in your location bar if the page has ScribbleLive technology on it.",
   "background" : {
@@ -25,5 +25,5 @@
     "128" : "scribblelivelogo.png"
   },
   "manifest_version": 2,
-  "permissions": [ "notifications"]
+  "permissions": [ "notifications", "http://apiv1.scribblelive.com/" ]
 }

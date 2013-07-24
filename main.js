@@ -1,26 +1,6 @@
-/**
- * Listens for the app launching then creates the window
- *
- * @see http://developer.chrome.com/trunk/apps/app.runtime.html
- * @see http://developer.chrome.com/trunk/apps/app.window.html
- */
 /*
 chrome.app.runtime.onLaunched.addListener(function() {
-  // Center window on screen.
-  var screenWidth = screen.availWidth;
-  var screenHeight = screen.availHeight;
-  var width = 170;
-  var height = 300;
-
-  chrome.app.window.create('index.html', {
-    bounds: {
-      width: width,
-      height: height,
-      left: Math.round((screenWidth-width)/2),
-      top: Math.round((screenHeight-height)/2)
-    }
-  });
-
+  
 
 var i = 0;
 	setInterval( function()
@@ -51,14 +31,37 @@ function onRequest(request, sender, sendResponse) {
   sendResponse({});
 };
 
+
 // Listen for the content script to send a message to the background page.
 chrome.extension.onRequest.addListener(onRequest);
 
 chrome.pageAction.onClicked.addListener( function(tab)
 {
-	var notification = webkitNotifications.createNotification(
-	      'favicon.png', 'ScribbleLive',
-	      "It's true!"
-	);
-	  notification.show();
+	
+	
+	setTimeout( function()
+	{
+		var xhr = new XMLHttpRequest();
+		xhr.open("GET", "http://apiv1.scribblelive.com/event/39048/page/last?Token=3pNSLEAs&format=json", true);
+		xhr.onreadystatechange = function() {
+		  if (xhr.readyState == 4) {
+		    // JSON.parse does not evaluate the attacker's scripts.
+		    var resp = JSON.parse(xhr.responseText);
+		
+			var notification = window.webkitNotifications.createNotification(
+			      'favicon.png', resp.Posts[0].Creator.Name,
+			      resp.Posts[0].Content.replace( /<.*?>/, "" )
+			);
+			notification.onclick  = function()
+			{
+				var newURL = "http://live.blog.scribblelive.com/Event/The_ScribbleLive_Daily/" + resp.Posts[0].Id;
+				  chrome.tabs.create({ url: newURL });
+			}
+			  notification.show();
+		  }
+		}
+		xhr.send();
+		
+		
+	}, 5000 );
 });
