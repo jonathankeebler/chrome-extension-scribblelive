@@ -54,14 +54,14 @@ chrome.pageAction.onClicked.addListener( function(tab)
 	LastId = null;
 	
 	CheckForNewPost(tab);
-	PollForUpdates = setInterval( CheckForNewPost, 5000 );
+	PollForUpdates = setInterval( CheckForNewPost, 10000 );
 	
 });
 
 function CheckForNewPost( tab )
 {
 	var xhr = new XMLHttpRequest();
-	xhr.open("GET", "http://apiv1.scribblelive.com/event/" + ThreadId + "/all?Token=3pNSLEAs&format=json&Max=1&Order=desc", true);
+	xhr.open("GET", "http://apiv1.scribblelive.com/event/" + ThreadId + "/all?Token=4tWkUYDn&format=json&Max=1&Order=desc", true);
 	xhr.onreadystatechange = function() {
 	  if (xhr.readyState == 4) {
 	    // JSON.parse does not evaluate the attacker's scripts.
@@ -93,12 +93,17 @@ function CheckForNewPost( tab )
 			      Icon, resp.Posts[0].Creator.Name,
 			      Content
 			);
-			notification.onclick  = function()
+			
+			if( resp.Websites.length > 0 )
 			{
-				var newURL = "http://live.blog.scribblelive.com/Event/The_ScribbleLive_Daily/" + resp.Posts[0].Id;
-				  chrome.tabs.create({ url: newURL });
+			
+				notification.onclick  = function()
+				{
+					var newURL = resp.Websites[0].Url + "/" + resp.Posts[0].Id;
+					  chrome.tabs.create({ url: newURL });
+				}
+				  notification.show();
 			}
-			  notification.show();
 		}
 	  }
 	}
