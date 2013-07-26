@@ -53,7 +53,7 @@ chrome.pageAction.onClicked.addListener( function(tab)
 	LastId = null;
 	
 	CheckForNewPost(tab);
-	PollForUpdates = setInterval( CheckForNewPost, 10000 );
+	PollForUpdates = setInterval( CheckForNewPost, 30000 );
 	
 });
 
@@ -101,8 +101,10 @@ function CheckForNewPost( tab )
 					var newURL = resp.Websites[0].Url + "/" + resp.Posts[0].Id;
 					  chrome.tabs.create({ url: newURL });
 				}
-				  notification.show();
+				  
 			}
+			
+			notification.show();
 		}
 	  }
 	}

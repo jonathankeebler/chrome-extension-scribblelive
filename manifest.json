@@ -1,6 +1,6 @@
 {
   "name" : "ScribbleLive",
-  "version" : "0.2",
+  "version" : "0.4",
   "description" : "Be notified of new posts to a ScribbleLive event",
   "background" : {
     "scripts": ["main.js"]
