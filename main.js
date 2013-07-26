@@ -1,4 +1,5 @@
 var ThreadId = null;
+var LastModified = null;
 
 // Called when a message is passed.  We assume that the content script
 // wants to show the page action.
@@ -44,6 +45,7 @@ chrome.pageAction.onClicked.addListener( function(tab)
 		clearInterval( PollForUpdates );
 		PollForUpdates = null;
 		LastId = null;
+		LastModified = null;
 		chrome.pageAction.setIcon( { tabId:tab.id, path:"favicon-grey.png" } );
 		return;
 	}
@@ -51,6 +53,7 @@ chrome.pageAction.onClicked.addListener( function(tab)
 	clearInterval( PollForUpdates );
 	PollForUpdates = null;
 	LastId = null;
+	LastModified = null;
 	
 	CheckForNewPost(tab);
 	PollForUpdates = setInterval( CheckForNewPost, 30000 );
@@ -60,51 +63,77 @@ chrome.pageAction.onClicked.addListener( function(tab)
 function CheckForNewPost( tab )
 {
 	var xhr = new XMLHttpRequest();
-	xhr.open("GET", "http://apiv1.scribblelive.com/event/" + ThreadId + "/all?Token=4tWkUYDn&format=json&Max=1&Order=desc", true);
+
+	var Max = 1;
+	if( !LastId )
+	{
+		Max = 5;
+	}
+
+	xhr.open("GET", "http://apiv1.scribblelive.com/event/" + ThreadId 
+		+ "/all?Token=4tWkUYDn&format=json&Max=" + Max + "&Order=desc"
+		+ ( LastModified ? "&Since=" + LastModified : "" )
+		, true);
 	xhr.onreadystatechange = function() {
 	  if (xhr.readyState == 4) {
 	    // JSON.parse does not evaluate the attacker's scripts.
 	    var resp = JSON.parse(xhr.responseText);
 
-		if( resp.Posts.length > 0 && resp.Posts[0].Id != LastId )
+		if( resp.Posts.length > 0 )
 		{
-			LastId = resp.Posts[0].Id;
-			
-			var Icon = "favicon.png";
-			if( resp.Posts[0].Creator.Avatar )
+			var i = 0;
+			while( i < resp.Posts.length )
 			{
-				Icon = resp.Posts[0].Creator.Avatar;
-			}
-			
-			if( resp.Posts[0].Type == "IMAGE" )
-			{
-				Icon = resp.Posts[0].Media[0].Url;
-			}
-			
-			var Content = resp.Posts[0].Content.replace( /<.*?>/g, "" );
-
-			if( /^\s*$/.test( Content ) )
-			{
-				Content = resp.Posts[0].Type;
-			}
-			
-			var notification = window.webkitNotifications.createNotification(
-			      Icon, resp.Posts[0].Creator.Name,
-			      Content
-			);
-			
-			if( resp.Websites && resp.Websites.length > 0 )
-			{
-			
-				notification.onclick  = function()
+				if( resp.Posts[i].Id != LastId && resp.Posts[i].IsDeleted == "0" )
 				{
-					var newURL = resp.Websites[0].Url + "/" + resp.Posts[0].Id;
-					  chrome.tabs.create({ url: newURL });
+					LastId = resp.Posts[i].Id;
+
+					PostCreationDate = new Date( 1000 + parseInt( resp.Posts[i].LastModified.replace(/\+0000/, "").replace(/[^0-9]/g, "") ) );
+
+					LastModified = PostCreationDate.getUTCFullYear() + "/" + ( PostCreationDate.getUTCMonth() + 1) 
+						+ "/" + PostCreationDate.getUTCDate() + " " + PostCreationDate.getUTCHours() + ":" 
+						+ PostCreationDate.getUTCMinutes() + ":" + PostCreationDate.getUTCSeconds();
+
+					
+					var Icon = "favicon.png";
+					if( resp.Posts[i].Creator.Avatar )
+					{
+						Icon = resp.Posts[i].Creator.Avatar;
+					}
+					
+					if( resp.Posts[i].Type == "IMAGE" )
+					{
+						Icon = resp.Posts[i].Media[0].Url;
+					}
+					
+					var Content = resp.Posts[i].Content.replace( /<.*?>/g, "" );
+
+					if( /^\s*$/.test( Content ) )
+					{
+						Content = resp.Posts[i].Type;
+					}
+					
+					var notification = window.webkitNotifications.createNotification(
+					      Icon, resp.Posts[i].Creator.Name,
+					      Content
+					);
+					
+					if( resp.Websites && resp.Websites.length > 0 )
+					{
+					
+						notification.onclick  = function()
+						{
+							var newURL = resp.Websites[0].Url + "/" + resp.Posts[i].Id;
+							  chrome.tabs.create({ url: newURL });
+						}
+						  
+					}
+					
+					notification.show();
+					break;
 				}
-				  
+				i++;
 			}
-			
-			notification.show();
 		}
 	  }
 	}
