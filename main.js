@@ -8,7 +8,6 @@ function onRequest(request, sender, sendResponse) {
 
 	if( sender == null || sender.tab == null ) return;
 	
-	
     chrome.pageAction.show(sender.tab.id);
 	if( PollForUpdates != null )
 	{
@@ -94,7 +93,7 @@ function CheckForNewPost( tab )
 			      Content
 			);
 			
-			if( resp.Websites.length > 0 )
+			if( resp.Websites && resp.Websites.length > 0 )
 			{
 			
 				notification.onclick  = function()
