@@ -1,30 +1,28 @@
-/*
-chrome.app.runtime.onLaunched.addListener(function() {
-  
-
-var i = 0;
-	setInterval( function()
-	{
-		var notification = window.webkitNotifications.createNotification(
-		      'scribblelivelogo.png', 'Push Message',
-		      "Push message for you! " + i++
-		);
-		  notification.show();
-	}, 5000 );
-
-});
-*/
-
-// Copyright (c) 2012 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+var ThreadId = null;
 
 // Called when a message is passed.  We assume that the content script
 // wants to show the page action.
 function onRequest(request, sender, sendResponse) {
   // Show the page action for the tab that the sender (content script)
   // was on.
-  chrome.pageAction.show(sender.tab.id);
+
+	if( sender == null || sender.tab == null ) return;
+	
+	
+    chrome.pageAction.show(sender.tab.id);
+	if( PollForUpdates != null )
+	{
+		chrome.pageAction.setIcon( { tabId:sender.tab.id, path:"favicon.png" } );
+	}
+	else if( request.ThreadId )
+	{
+		chrome.pageAction.setIcon( { tabId:sender.tab.id, path:"favicon-grey.png" } );
+		ThreadId = request.ThreadId;
+	}
+	else
+	{
+		chrome.pageAction.hide( sender.tab.id );
+	}
 
 
   // Return nothing to let the connection be cleaned up.
@@ -32,25 +30,68 @@ function onRequest(request, sender, sendResponse) {
 };
 
 
+
 // Listen for the content script to send a message to the background page.
 chrome.extension.onRequest.addListener(onRequest);
 
+var PollForUpdates = null;
+var LastId = null;
 chrome.pageAction.onClicked.addListener( function(tab)
 {
+	//chrome.pageAction.setPopup( { tabId: tab.id, popup:"index.html" });
 	
-	
-	setTimeout( function()
+	if( PollForUpdates != null )
 	{
-		var xhr = new XMLHttpRequest();
-		xhr.open("GET", "http://apiv1.scribblelive.com/event/39048/page/last?Token=3pNSLEAs&format=json", true);
-		xhr.onreadystatechange = function() {
-		  if (xhr.readyState == 4) {
-		    // JSON.parse does not evaluate the attacker's scripts.
-		    var resp = JSON.parse(xhr.responseText);
-		
+		clearInterval( PollForUpdates );
+		PollForUpdates = null;
+		LastId = null;
+		chrome.pageAction.setIcon( { tabId:tab.id, path:"favicon-grey.png" } );
+		return;
+	}
+	chrome.pageAction.setIcon( { tabId:tab.id, path:"favicon.png" } );
+	clearInterval( PollForUpdates );
+	PollForUpdates = null;
+	LastId = null;
+	
+	CheckForNewPost(tab);
+	PollForUpdates = setInterval( CheckForNewPost, 5000 );
+	
+});
+
+function CheckForNewPost( tab )
+{
+	var xhr = new XMLHttpRequest();
+	xhr.open("GET", "http://apiv1.scribblelive.com/event/" + ThreadId + "/all?Token=3pNSLEAs&format=json&Max=1&Order=desc", true);
+	xhr.onreadystatechange = function() {
+	  if (xhr.readyState == 4) {
+	    // JSON.parse does not evaluate the attacker's scripts.
+	    var resp = JSON.parse(xhr.responseText);
+
+		if( resp.Posts.length > 0 && resp.Posts[0].Id != LastId )
+		{
+			LastId = resp.Posts[0].Id;
+			
+			var Icon = "favicon.png";
+			if( resp.Posts[0].Creator.Avatar )
+			{
+				Icon = resp.Posts[0].Creator.Avatar;
+			}
+			
+			if( resp.Posts[0].Type == "IMAGE" )
+			{
+				Icon = resp.Posts[0].Media[0].Url;
+			}
+			
+			var Content = resp.Posts[0].Content.replace( /<.*?>/g, "" );
+
+			if( /^\s*$/.test( Content ) )
+			{
+				Content = resp.Posts[0].Type;
+			}
+			
 			var notification = window.webkitNotifications.createNotification(
-			      'favicon.png', resp.Posts[0].Creator.Name,
-			      resp.Posts[0].Content.replace( /<.*?>/, "" )
+			      Icon, resp.Posts[0].Creator.Name,
+			      Content
 			);
 			notification.onclick  = function()
 			{
@@ -58,10 +99,10 @@ chrome.pageAction.onClicked.addListener( function(tab)
 				  chrome.tabs.create({ url: newURL });
 			}
 			  notification.show();
-		  }
 		}
-		xhr.send();
-		
-		
-	}, 5000 );
-});
+	  }
+	}
+	xhr.send();
+
+
+}

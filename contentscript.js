@@ -3,12 +3,19 @@
  * source code is governed by a BSD-style license that can be found in the
  * LICENSE file.
  */
-var regex = /(scribblelive)/i;
+var regex = /(var ThreadId = "([0-9]+)";|embed\.scribblelive\.com\/Embed\/v5\.aspx\?Id=([0-9]+))/i;
 
-// Test the text of the body element against our regular expression.
-if (regex.test(document.body.innerText)) {
-  // The regular expression produced a match, so notify the background page.
-  chrome.extension.sendRequest({}, function(response) {});
-} else {
-  // No match was found.
+var ThreadId = null;
+var Match = document.documentElement.innerHTML.match(regex);
+if( Match )
+{
+	if( Match[2] )
+	{
+		ThreadId = Match[2];
+	}
+	else if( Match[3] )
+	{
+		ThreadId = Match[3];
+	}
 }
+chrome.extension.sendRequest({ ThreadId:ThreadId}, function(response) {});
