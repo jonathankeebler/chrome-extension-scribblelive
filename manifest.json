@@ -1,7 +1,7 @@
 {
-  "name" : "The ScribbleLive Daily",
-  "version" : "0.1",
-  "description" : "Shows the ScribbleLive icon in your location bar if the page has ScribbleLive technology on it.",
+  "name" : "ScribbleLive",
+  "version" : "0.2",
+  "description" : "Be notified of new posts to a ScribbleLive event",
   "background" : {
     "scripts": ["main.js"]
   },
